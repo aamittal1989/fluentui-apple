@@ -15,6 +15,7 @@ class NotificationViewDemoController: DemoController {
         case neutralBar
         case persistentBarWithAction
         case persistentBarWithCancel
+        case neutralToastWithImageAndTitle
 
         var displayText: String {
             switch self {
@@ -34,6 +35,8 @@ class NotificationViewDemoController: DemoController {
                 return "Persistent Bar with Action"
             case .persistentBarWithCancel:
                 return "Persistent Bar with Cancel"
+            case .neutralToastWithImageAndTitle:
+                return "Neutral Toast with no padding custom image"
             }
         }
 
@@ -83,6 +86,8 @@ class NotificationViewDemoController: DemoController {
             view.setup(style: .neutralBar, message: "This error can be taken action on with the action on the right.", actionTitle: "Action", action: { [unowned self] in self.showMessage("`Action` tapped") })
         case .persistentBarWithCancel:
             view.setup(style: .neutralBar, message: "This error can be tapped or dismissed with the icon to the right.", action: { [unowned self] in self.showMessage("`Dismiss` tapped") })
+        case .neutralToastWithImageAndTitle:
+            view.setup(style: .neutralToast, title: "Screenshot Found", message: "Tap to edit, convert, share and more", image: resizeImage(image: UIImage(named: "avatar_allan_munger"), newWidth: 64, newHeight: 64)?.withRenderingMode(.alwaysOriginal), action: { [unowned self] in self.showMessage("`Dismiss` tapped") }, messageAction: { [unowned self] in self.showMessage("`Screenshot notification` tapped") }, hasNoImagePadding: true)
         }
         return view
     }
@@ -93,5 +98,13 @@ class NotificationViewDemoController: DemoController {
         }
 
         createNotificationView(forVariant: variant).show(in: view) { $0.hide(after: variant.delayForHiding) }
+    }
+
+    func resizeImage(image: UIImage?, newWidth: CGFloat, newHeight: CGFloat) -> UIImage? {
+        UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newWidth))
+        image?.draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newWidth))
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return newImage
     }
 }

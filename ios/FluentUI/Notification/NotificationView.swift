@@ -141,6 +141,7 @@ open class NotificationView: UIView {
         }
     }
 
+    private var hasNoImagePadding: Bool = false
     private var isHiding: Bool = false
     private var completionsForHide: [() -> Void] = []
 
@@ -155,7 +156,6 @@ open class NotificationView: UIView {
         container.axis = .horizontal
         container.isAccessibilityElement = true
         container.spacing = Constants.horizontalSpacing
-        container.layoutMargins = UIEdgeInsets(top: Constants.verticalPadding, left: 0, bottom: Constants.verticalPadding, right: 0)
         return container
     }()
     private let textContainer: UIStackView = {
@@ -240,7 +240,6 @@ open class NotificationView: UIView {
             separator.bottomAnchor.constraint(equalTo: topAnchor),
             container.topAnchor.constraint(equalTo: topAnchor),
             container.bottomAnchor.constraint(equalTo: bottomAnchor),
-            container.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Constants.horizontalPadding),
             container.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Constants.horizontalPadding)
         ])
 
@@ -262,13 +261,16 @@ open class NotificationView: UIView {
     ///   - actionTitle: The title for action on the trailing edge of the view.
     ///   - action: The closure to be called when action button is tapped by a user.
     ///   - messageAction: The closure to be called when the body of the view (except action button) is tapped by a user (only supported in toasts).
+    ///   - hasNoImagePadding: If no padding around image is required.
     ///  - Returns: Reference to this view that can be used for "chained" calling of `show`. Can be ignored.
     @discardableResult
-    @objc open func setup(style: Style, title: String = "", message: String, image: UIImage? = nil, actionTitle: String = "", action: (() -> Void)? = nil, messageAction: (() -> Void)? = nil) -> Self {
+    @objc open func setup(style: Style, title: String = "", message: String, image: UIImage? = nil, actionTitle: String = "", action: (() -> Void)? = nil, messageAction: (() -> Void)? = nil, hasNoImagePadding: Bool = false) -> Self {
         self.style = style
         let title = style.supportsTitle ? title : ""
         let image = style.supportsImage ? image : nil
         let messageAction = style.supportsMessageAction ? messageAction : nil
+
+        self.hasNoImagePadding = hasNoImagePadding
 
         titleLabel.text = title
         titleLabel.isHidden = title.isEmpty
@@ -293,6 +295,17 @@ open class NotificationView: UIView {
             actionButton.isHidden = true
             messageLabel.textAlignment = .center
         }
+        var constraints = [NSLayoutConstraint]()
+
+        if hasNoImagePadding {
+            container.layoutMargins = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+            constraints.append(container.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor))
+        } else {
+            container.layoutMargins = UIEdgeInsets(top: Constants.verticalPadding, left: 0, bottom: Constants.verticalPadding, right: 0)
+            constraints.append(container.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Constants.horizontalPadding))
+        }
+
+        NSLayoutConstraint.activate(constraints)
 
         self.action = action
         self.messageAction = messageAction
@@ -340,6 +353,7 @@ open class NotificationView: UIView {
             constraints.append(centerXAnchor.constraint(equalTo: view.centerXAnchor))
             constraints.append(widthAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.widthAnchor, constant: -2 * style.presentationOffset))
         }
+
         NSLayoutConstraint.activate(constraints)
 
         isShown = true
@@ -488,7 +502,7 @@ open class NotificationView: UIView {
             suggesgedHeight += titleLabelSize.height
         }
 
-        let suggestedVerticalPadding = hasSingleLineLayout ? Constants.verticalPaddingForOneLine : Constants.verticalPadding
+        let suggestedVerticalPadding = hasNoImagePadding ? 0 : (hasSingleLineLayout ? Constants.verticalPaddingForOneLine : Constants.verticalPadding)
         suggesgedHeight += 2 * suggestedVerticalPadding
         suggesgedHeight = ceil(max(suggesgedHeight, hasSingleLineLayout ? Constants.minHeightForOneLine : Constants.minHeight))
         container.layoutMargins = UIEdgeInsets(top: suggestedVerticalPadding, left: 0, bottom: suggestedVerticalPadding, right: 0)
